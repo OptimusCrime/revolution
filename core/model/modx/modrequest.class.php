@@ -9,6 +9,7 @@
  */
 use xPDO\Cache\xPDOCacheManager;
 use xPDO\xPDO;
+use MODX\modX;
 
 /**
  * Encapsulates the interaction of MODX with an HTTP request.

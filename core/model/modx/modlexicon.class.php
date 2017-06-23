@@ -59,7 +59,7 @@ class modLexicon {
      * @param xPDO $modx A reference to the modX instance.
      * @param array $config An array of configuration properties
      */
-    function __construct(xPDO &$modx,array $config = array()) {
+    function __construct(MODX\modX &$modx,array $config = array()) {
         $this->modx =& $modx;
         $this->_paths = array(
              'core' => $this->modx->getOption('core_path') . 'cache/lexicon/',

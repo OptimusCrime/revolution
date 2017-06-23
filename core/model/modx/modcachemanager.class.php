@@ -34,9 +34,10 @@ class modCacheManager extends xPDOCacheManager {
      * @param xPDO $xpdo A reference to the xPDO/modX instance
      * @param array $options An array of configuration options
      */
-    function __construct(& $xpdo, array $options = array()) {
+    function __construct(MODX\modX $modx, array $options = array()) {
+        $xpdo = $modx->xpdo;
         parent :: __construct($xpdo, $options);
-        $this->modx =& $this->xpdo;
+        $this->modx =& $modx;
     }
 
     /**

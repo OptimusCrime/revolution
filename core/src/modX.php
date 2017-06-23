@@ -15,6 +15,7 @@ use DI\Bridge\Slim\App;
 use DI\ContainerBuilder;
 use Interop\Container\ContainerInterface;
 use MODX\Exceptions\Exception;
+use xPDO\Cache\xPDOCacheManager;
 use xPDO\xPDO;
 use xPDO\xPDOException;
 
@@ -25,9 +26,6 @@ if (!defined('MODX_CORE_PATH')) {
 if (!defined('MODX_CONFIG_KEY')) {
     define('MODX_CONFIG_KEY', 'config');
 }
-
-class_alias('xPDO\xPDO', 'xPDO');
-class_alias('MODX\modX', 'modX');
 
 class modX extends App
 {
@@ -275,6 +273,30 @@ class modX extends App
      */
     protected $_sessionState = modX::SESSION_STATE_UNINITIALIZED;
 
+
+    /**
+     * Magic functions for BC with 2.x
+     */
+    public function __call($method, $args)
+    {
+        // Pass through methods to xPDO
+        $xpdo = $this->getContainer()->get('xpdo');
+        if (method_exists($xpdo, $method)) {
+            return call_user_func_array([$xpdo, $method], $args);
+        }
+//        if (in_array($method, ['newObject', 'getObject', 'getCollection', 'getIterator', 'newQuery', 'getDebug'], true)) {
+//            $xpdo = $this->getContainer()->get('xpdo');
+//            return call_user_func_array([$xpdo, $method], $args);
+//        }
+    }
+
+    public function __get($name)
+    {
+        if (in_array($name, ['cacheManager'], true)) {
+            return $this->getContainer()->get($name);
+        }
+    }
+
     /**
      * Harden the environment against common security flaws.
      *
@@ -387,6 +409,9 @@ class modX extends App
 
             parent::__construct();
 
+            $this->config = $this->getContainer()->get('config');
+            $this->xpdo = $this->getContainer()->get('xpdo');
+
             $this->xpdo->setLogLevel($this->xpdo->getOption('log_level', null, xPDO::LOG_LEVEL_ERROR));
             $this->xpdo->setLogTarget($this->xpdo->getOption('log_target', null, 'FILE'));
             $this->xpdo->setPackage('modx', MODX_CORE_PATH . 'model/');
@@ -474,15 +499,55 @@ class modX extends App
                 } else {
                     throw new xPDOException("Could not load required config data.");
                 }
+                $config->replace($data);
+                return xPDO::getInstance(null, $this->getContainer());
+            },
 
-                return xPDO::getInstance(null, $data);
+            'cacheManager' => function(ContainerInterface $c) {
+                $config = $c->get('config');
+                $xpdo = $c->get('xpdo');
+                $cacheManagerClass = $config->get('modCacheManager.class', 'modCacheManager');
+                if ($className = $xpdo->loadClass($cacheManagerClass, '', false, true)) {
+                    if ($cacheManager = new $className($this)) {
+                        return $cacheManager;
+                    }
+                }
+                throw new Exception('Could not load cacheManager instance');
+            },
+            'parser' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $config = $c->get('config');
+                $parserClass = $config->get('parser_class', 'modParser');
+                $parserPath = $config->get('parser_class_path', '');
+                $xpdo->loadClass('modParser','', false, true);
+                if ($parser = new $parserClass($this)) {
+                    return $parser;
+                }
+                throw new Exception('Could not load parser class ' . $parserClass);
+            },
+            'registry' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $config = $c->get('config');
+
+                $xpdo->loadClass('registry.modRegistry','', false, true);
+                if ($registry = new \modRegistry($this)) {
+                    return $registry;
+                }
+                throw new Exception('Could not load registry');
+            },
+            'lexicon' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $config = $c->get('config');
+
+                $xpdo->loadClass('modLexicon','', false, true);
+                if ($registry = new \modLexicon($this)) {
+                    return $registry;
+                }
+                throw new Exception('Could not load lexicon');
             }
         ]);
 
         $builder->addDefinitions(__DIR__ . '/../config/container.php');
-
-        $this->config = $this->getContainer()->get('config');
-        $this->xpdo = $this->getContainer()->get('xpdo');
     }
 
     /**
@@ -1166,7 +1231,6 @@ class modX extends App
                 'username' => $this->getOption('default_username','','(anonymous)',true)
             ), '', true);
         }
-        ksort($this->config);
         $this->toPlaceholders($this->user->get(array('id','username')),'modx.user');
         return $this->user;
     }
@@ -1949,7 +2013,7 @@ class modX extends App
             ";
             $stmt= $this->prepare($sql);
             if ($stmt && $stmt->execute()) {
-                while ($ee = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                while ($ee = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                     $eventElementMap[$ee['event']][(string) $ee['pluginid']]= $ee['pluginid'] . (!empty($ee['propertyset']) ? ':' . $ee['propertyset'] : '');
                 }
             }
@@ -2232,7 +2296,7 @@ class modX extends App
                     $this->resourceMap= & $this->context->resourceMap;
                     $this->eventMap= & $this->context->eventMap;
                     $this->pluginCache= & $this->context->pluginCache;
-                    $this->config= array_merge($this->_systemConfig, $this->context->config);
+                    $this->config->replace($this->context->config);
                     $iniTZ = ini_get('date.timezone');
                     $cfgTZ = $this->getOption('date_timezone', $options, '');
                     if (!empty($cfgTZ)) {
@@ -2293,7 +2357,7 @@ class modX extends App
      */
     protected function _initErrorHandler($options = null) {
         if ($this->errorHandler == null || !is_object($this->errorHandler)) {
-            if ($ehClass = $this->getOption('error_handler_class', $options, 'modErrorHandler', true)) {
+            if ($ehClass = $this->getOption('error_handler_class', $options, 'error.modErrorHandler', true)) {
                 if ($ehClass= $this->loadClass($ehClass, '', false, true)) {
                     if ($this->errorHandler= new $ehClass($this)) {
                         $result= set_error_handler(array ($this->errorHandler, 'handleError'), $this->getOption('error_handler_types', $options, error_reporting(), true));
@@ -2419,7 +2483,7 @@ class modX extends App
                 $config[$setting->get('key')]= $setting->get('value');
             }
         }
-        $this->config = array_merge($this->config, $config);
+        $this->config->replace($config);
         $this->_systemConfig = $this->config;
         return true;
     }

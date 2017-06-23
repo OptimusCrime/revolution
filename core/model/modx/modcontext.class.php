@@ -100,7 +100,7 @@ class modContext extends modAccessibleObject {
                     xPDO::OPT_CACHE_HANDLER => $this->xpdo->getOption('cache_context_settings_handler', null, $this->xpdo->getOption(xPDO::OPT_CACHE_HANDLER, null, 'xPDO\Cache\xPDOFileCache')),
                     xPDO::OPT_CACHE_FORMAT => (integer) $this->xpdo->getOption('cache_context_settings_format', null, $this->xpdo->getOption(xPDO::OPT_CACHE_FORMAT, null, xPDOCacheManager::CACHE_PHP)),
                 )))) {
-                    $context = $this->xpdo->cacheManager->generateContext($this->get('key'), $options);
+                    $context = $this->xpdo->services->get('cacheManager')->generateContext($this->get('key'), $options);
                 }
                 if (!empty($context)) {
                     foreach ($context as $var => $val) {
