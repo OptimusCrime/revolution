@@ -53,8 +53,8 @@ class modParser {
     /**
      * @param xPDO $modx A reference to the modX|xPDO instance
      */
-    function __construct(xPDO &$modx) {
-        $this->modx =& $modx;
+    function __construct(MODX\modX $modx) {
+        $this->modx = $modx;
     }
 
     /**

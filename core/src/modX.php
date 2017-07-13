@@ -135,10 +135,6 @@ class modX extends App
      */
     public $cultureKey = '';
     /**
-     * @var modLexicon Represents a localized dictionary of common words and phrases.
-     */
-    public $lexicon = null;
-    /**
      * @var modUser The current user object, if one is authenticated for the
      * current request and context.
      */
@@ -203,10 +199,6 @@ class modX extends App
      * @var modManagerController A controller object that represents a page in the manager
      */
     public $controller = null;
-    /**
-     * @var modRegistry $registry
-     */
-    public $registry;
     /**
      * @var modMail $mail
      */
@@ -293,6 +285,15 @@ class modX extends App
     public function __get($name)
     {
         if (in_array($name, ['cacheManager'], true)) {
+            return $this->getContainer()->get($name);
+        }
+        if (in_array($name, ['smarty'], true)) {
+            return $this->getContainer()->get($name);
+        }
+        if (in_array($name, ['lexicon'], true)) {
+            return $this->getContainer()->get($name);
+        }
+        if (in_array($name, ['registry'], true)) {
             return $this->getContainer()->get($name);
         }
     }
@@ -502,7 +503,7 @@ class modX extends App
                 }
                 $config->replace($data);
 
-                return xPDO::getInstance(null, $config->all());
+                return xPDO::getInstance(null, $this->getContainer());
             },
 
             'cacheManager' => function(ContainerInterface $c) {
@@ -546,6 +547,16 @@ class modX extends App
                     return $registry;
                 }
                 throw new Exception('Could not load lexicon');
+            },
+            'smarty' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $config = $c->get('config');
+
+                $xpdo->loadClass('smarty.modSmarty','', false, true);
+                if ($smarty = new \modSmarty($this)) {
+                    return $smarty;
+                }
+                throw new Exception('Could not load smarty');
             }
         ]);
 
@@ -2352,7 +2363,8 @@ class modX extends App
             setlocale(LC_ALL, $this->getOption('locale', null, $locale));
         }
 
-        $this->getService('lexicon', $this->getOption('lexicon_class', $options, 'modLexicon'), '', is_array($options) ? $options : array());
+        $this->getContainer()->get('lexicon')->setConfig(is_array($options) ? $options : array());
+
         $this->invokeEvent('OnInitCulture');
     }
 

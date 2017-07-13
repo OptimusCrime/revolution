@@ -46,6 +46,14 @@ class modLexicon {
      */
     protected $_paths = array();
     /**
+     * Array that holds the config
+     *
+     * @deprecated
+     * @var array $_config
+     * @access protected
+     */
+    protected $_config = array();
+    /**
      * An array of loaded topic strings
      *
      * @var array $_loadedTopics
@@ -65,6 +73,15 @@ class modLexicon {
              'core' => $this->modx->getOption('core_path') . 'cache/lexicon/',
         );
         $this->_lexicon = array($this->modx->getOption('cultureKey',null,'en') => array());
+        $this->setConfig($config);
+    }
+
+    /**
+     * Set the config by providing a array with configurations
+     *
+     * @param array $config An array of configuration properties
+     */
+    public function setConfig(array $config = array()) {
         $this->config = array_merge($config,array());
     }
 
