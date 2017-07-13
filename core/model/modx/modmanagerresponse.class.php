@@ -182,7 +182,7 @@ class modManagerResponse extends modResponse {
 
     public function instantiateController($className,$getInstanceMethod = 'getInstance') {
         try {
-            $c = new $className($this->modx,$this->action, $this->context);
+            $c = new $className($this->modx,$this->action);
             if (!($c instanceof modExtraManagerController) && $getInstanceMethod == 'getInstanceDeprecated') {
                 $getInstanceMethod = 'getInstance';
             }

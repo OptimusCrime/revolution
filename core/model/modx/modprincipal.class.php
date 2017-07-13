@@ -21,13 +21,9 @@ class modPrincipal extends xPDOSimpleObject {
      * @access protected
      */
     protected $_attributes = null;
-    
-    public $context;
 
-    public function __construct(xPDO $xpdo, $context) {
+    public function __construct(xPDO $xpdo) {
         parent::__construct($xpdo);
-        
-        $this->context = $context;
     }
 
     /**

@@ -166,7 +166,7 @@ abstract class modProcessor {
         } else {
             $topics = $this->getLanguageTopics();
             foreach ($topics as $topic) {
-                $this->modx->lexicon->load($topic);
+                $this->modx->getContainer()->get('lexicon')->load($topic);
             }
 
             $initialized = $this->initialize();

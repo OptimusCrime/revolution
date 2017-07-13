@@ -38,8 +38,6 @@ abstract class modManagerController {
     public $head = array('css' => array(),'js' => array(),'html' => array(),'lastjs' => array());
     /** @var array An array of placeholders that are being set to the page */
     public $placeholders = array();
-    /** @var modContext Holds the current context */
-    public $context;
 
     /** @var string Any Form Customization rule output that was created. */
     protected $ruleOutput = array();
@@ -58,10 +56,9 @@ abstract class modManagerController {
      * @param modX $modx A reference to the modX object.
      * @param array $config A configuration array of options related to this controller's action object.
      */
-    function __construct(MODX\modX &$modx,$config = array(), $context) {
+    function __construct(MODX\modX &$modx,$config = array()) {
         $this->modx =& $modx;
         $this->config = !empty($config) && is_array($config) ? $config : array();
-        $this->context = $context;
     }
 
     /**

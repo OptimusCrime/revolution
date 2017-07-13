@@ -63,6 +63,10 @@ class modX extends App
      */
     public $xpdo;
     /**
+     * @var string The current context key
+     */
+    public $currentContextKey;
+    /**
      * @var modContext The Context represents a unique section of the site which
      * this modX instance is controlling.
      */
@@ -557,7 +561,43 @@ class modX extends App
                     return $smarty;
                 }
                 throw new Exception('Could not load smarty');
-            }
+            },
+            'contexts' => function(ContainerInterface $c) {
+                // TODO
+            },
+            'context' => function(ContainerInterface $c) {
+                return 'mgr';
+            },
+            'hashing' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $xpdo->loadClass('hashing.modHashing','', false, true);
+                if ($hashing = new \modHashing($this)) {
+                    return $hashing;
+                }
+                throw new Exception('Could not load hashing');
+            },
+            'mail' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $xpdo->loadClass('mail.modPHPMailer','', false, true);
+                if ($mail = new \modPHPMailer($this)) {
+                    return $mail;
+                }
+                throw new Exception('Could not load mail');
+            },
+            'error' => function(ContainerInterface $c) {
+                $xpdo = $c->get('xpdo');
+                $xpdo->loadClass('error.modError','', false, true);
+                if ($error = new \modError($this)) {
+                    return $error;
+                }
+                throw new Exception('Could not load email');
+            },
+            'session_starter' => function(ContainerInterface $c) {
+                return $this->startSession();
+            },
+            'user' => function(ContainerInterface $c) {
+                return $this->user;
+            },
         ]);
 
         $builder->addDefinitions(__DIR__ . '/../config/container.php');
@@ -1396,7 +1436,7 @@ class modX extends App
      * loaded on this or any previous call to the function, false otherwise.
      */
     public function getRequest($class= 'modRequest', $path= '') {
-        if ($this->request === null || !($this->request instanceof modRequest)) {
+        if ($this->request === null || !($this->request instanceof \modRequest)) {
             $requestClass = $this->getOption('modRequest.class',$this->config,$class);
             if ($requestClass !== $class) {
                 $this->loadClass('modRequest', '', false, true);
@@ -1404,7 +1444,8 @@ class modX extends App
             if ($className= $this->loadClass($requestClass, $path, !empty($path), true))
                 $this->request= new $className ($this);
         }
-        return is_object($this->request) && $this->request instanceof modRequest;
+
+        return is_object($this->request) && $this->request instanceof \modRequest;
     }
 
     /**
@@ -1556,10 +1597,12 @@ class modX extends App
     public function invokeEvent($eventName, array $params= array ()) {
         if (!$eventName)
             return false;
-        if ($this->eventMap === null && $this->context instanceof modContext)
+        if ($this->eventMap === null && $this->context instanceof \modContext) {
             $this->_initEventMap($this->context->get('key'));
+        }
+
         if (!isset ($this->eventMap[$eventName])) {
-            //$this->log(modX::LOG_LEVEL_DEBUG,'System event '.$eventName.' was executed but does not exist.');
+            $this->log(xPDO::LOG_LEVEL_DEBUG,'System event '.$eventName.' was executed but does not exist.');
             return false;
         }
         $results= array ();
@@ -1605,6 +1648,7 @@ class modX extends App
                 }
             }
         }
+
         return $results;
     }
 
@@ -1676,13 +1720,14 @@ class modX extends App
                 }
             }
             if (empty($processor)) {
-                $processor = new modDeprecatedProcessor($this, $scriptProperties);
+                $processor = new \modDeprecatedProcessor($this, $scriptProperties);
             }
             $processor->setPath($processorFile);
             $response = $processor->run();
         } else {
-            $this->log(modX::LOG_LEVEL_ERROR, "Processor {$processorFile} does not exist; " . print_r($options, true));
+            $this->log(xPDO::LOG_LEVEL_ERROR, "Processor {$processorFile} does not exist; " . print_r($options, true));
         }
+
         return $response;
     }
 
@@ -2037,6 +2082,9 @@ class modX extends App
                 }
             }
         }
+
+        var_dump($eventElementMap);
+
         return $eventElementMap;
     }
 
