@@ -38,6 +38,8 @@ abstract class modManagerController {
     public $head = array('css' => array(),'js' => array(),'html' => array(),'lastjs' => array());
     /** @var array An array of placeholders that are being set to the page */
     public $placeholders = array();
+    /** @var modContext Holds the current context */
+    public $context;
 
     /** @var string Any Form Customization rule output that was created. */
     protected $ruleOutput = array();
@@ -56,9 +58,10 @@ abstract class modManagerController {
      * @param modX $modx A reference to the modX object.
      * @param array $config A configuration array of options related to this controller's action object.
      */
-    function __construct(MODX\modX &$modx,$config = array()) {
+    function __construct(MODX\modX &$modx,$config = array(), $context) {
         $this->modx =& $modx;
         $this->config = !empty($config) && is_array($config) ? $config : array();
+        $this->context = $context;
     }
 
     /**
@@ -75,11 +78,12 @@ abstract class modManagerController {
      * @param modX $modx A reference to the modX object.
      * @param string $className The name of the class that is being requested.
      * @param array $config A configuration array of options related to this controller's action object.
+     * @param modContext $context The context to load the controller in
      * @return modManagerController The class specified by $className
      */
-    public static function getInstance(MODX\modX &$modx, $className, array $config = array()) {
+    public static function getInstance(MODX\modX &$modx, $className, array $config = array(), $context) {
         /** @var modManagerController $controller */
-        $controller = new $className($modx,$config);
+        $controller = new $className($modx,$config, $context);
         return $controller;
     }
 

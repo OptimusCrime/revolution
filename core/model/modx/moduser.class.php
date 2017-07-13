@@ -585,8 +585,7 @@ class modUser extends modPrincipal {
      * @return modUserGroup|null
      */
     public function getPrimaryGroup() {
-        var_dump(gettype($this->xpdo->context));
-        if (!$this->isAuthenticated($this->xpdo->context->get('key'))) {
+        if (!$this->isAuthenticated($this->context->get('key'))) {
             return null;
         }
         $userGroup = $this->getOne('PrimaryGroup');

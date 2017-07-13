@@ -61,9 +61,6 @@ class modSmarty extends SmartyBC {
         $this->template_dir = $modx->getOption('manager_path') . 'templates/';
         $this->compile_dir  = $modx->getOption(xPDO::OPT_CACHE_PATH) . 'mgr/smarty/';
         $this->config_dir   = $modx->getOption('core_path') . 'model/smarty/configs';
-        $this->plugins_dir  = array(
-            $this->modx->getOption('core_path') . 'model/smarty/plugins',
-        );
         $this->caching = false;
 
         foreach ($params as $paramKey => $paramValue) {

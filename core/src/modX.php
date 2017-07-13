@@ -1242,13 +1242,14 @@ class modX extends App
                 }
             }
         } else {
-            $this->user = $this->newObject('modUser');
+            $this->user = new \modUser($this->getContainer()->get('xpdo'), $this->config, $this->context);
             $this->user->fromArray(array(
                 'id' => 0,
                 'username' => $this->getOption('default_username','','(anonymous)',true)
             ), '', true);
         }
         $this->toPlaceholders($this->user->get(array('id','username')),'modx.user');
+
         return $this->user;
     }
 
@@ -1421,8 +1422,9 @@ class modX extends App
         $responseClass= $this->getOption('modResponse.class',$this->config,$class);
         $className= $this->loadClass($responseClass, $path, !empty($path), true);
         if ($this->response === null || !($this->response instanceof $className)) {
-            if ($className) $this->response= new $className ($this);
+            if ($className) $this->response= new $className ($this, $this->context);
         }
+
         return $this->response instanceof $className;
     }
 
@@ -2335,6 +2337,7 @@ class modX extends App
                 }
             }
         }
+
         if ($initialized) {
             $this->setLogLevel($this->getOption('log_level', $options, xPDO::LOG_LEVEL_ERROR));
             $this->setLogTarget($this->getOption('log_target', $options, 'FILE'));
